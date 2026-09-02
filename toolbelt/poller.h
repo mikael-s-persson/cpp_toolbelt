@@ -7,9 +7,29 @@
 #include <poll.h>
 
 #include <chrono>
+#include <limits>
 #include <vector>
 
 namespace toolbelt {
+
+namespace toolbelt_details {
+
+template <class Rep, class Period>
+inline uint64_t ChronoToNanoseconds(std::chrono::duration<Rep, Period> duration) {
+  using FloatingNanoseconds = std::chrono::duration<long double, std::nano>;
+  const long double count = FloatingNanoseconds(duration).count();
+  if (!(count > 0)) {
+    return 0;
+  }
+  const long double maximum =
+      static_cast<long double>(std::numeric_limits<uint64_t>::max());
+  if (count >= maximum) {
+    return std::numeric_limits<uint64_t>::max();
+  }
+  return static_cast<uint64_t>(count);
+}
+
+} // namespace toolbelt_details
 
 // This is to provide the epoll equivalent of waiting for a set
 // of pollfds
@@ -195,39 +215,27 @@ public:
   int Wait(const T &fd, uint32_t events,
            std::chrono::duration<Rep, Period> duration) const {
     return Wait(
-        fd, events,
-        std::chrono::duration_cast<std::chrono::duration<Rep, std::nano>>(
-            duration)
-            .count());
+        fd, events, toolbelt_details::ChronoToNanoseconds(duration));
   }
 
   template <class T, class Rep, class Period>
   int Wait(const T &fd, std::chrono::duration<Rep, Period> duration) const {
     return Wait(
-        fd, POLLIN,
-        std::chrono::duration_cast<std::chrono::duration<Rep, std::nano>>(
-            duration)
-            .count());
+        fd, POLLIN, toolbelt_details::ChronoToNanoseconds(duration));
   }
 
   template <class T, class Rep, class Period>
   int PollAndWait(const T &fd, uint32_t events,
                   std::chrono::duration<Rep, Period> duration) const {
     return PollAndWait(
-        fd, events,
-        std::chrono::duration_cast<std::chrono::duration<Rep, std::nano>>(
-            duration)
-            .count());
+        fd, events, toolbelt_details::ChronoToNanoseconds(duration));
   }
 
   template <class T, class Rep, class Period>
   int PollAndWait(const T &fd,
                   std::chrono::duration<Rep, Period> duration) const {
     return PollAndWait(
-        fd, POLLIN,
-        std::chrono::duration_cast<std::chrono::duration<Rep, std::nano>>(
-            duration)
-            .count());
+        fd, POLLIN, toolbelt_details::ChronoToNanoseconds(duration));
   }
 
   // Sleeping functions.
@@ -241,9 +249,7 @@ public:
 
   template <class Rep, class Period>
   void Sleep(std::chrono::duration<Rep, Period> duration) const {
-    Nanosleep(std::chrono::duration_cast<std::chrono::duration<Rep, std::nano>>(
-                  duration)
-                  .count());
+    Nanosleep(toolbelt_details::ChronoToNanoseconds(duration));
   }
 
 protected:
