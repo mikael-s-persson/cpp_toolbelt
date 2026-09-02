@@ -17,7 +17,7 @@ bazel_dep(name = "rules_cc", version = "0.2.17")
 # )
 git_override(
     module_name = "coroutines",
-    commit = "dc9b4e6ab165bba8403b85cbcfccddb95f34d47b",
+    commit = "f193a0f4aa006213fe41c68f0f5322b234e842ad",
     remote = "https://github.com/mikael-s-persson/co.git",
 )
 
